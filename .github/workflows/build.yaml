@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     name: Build & Push
-    runs-on: ubuntu-latest
+    runs-on: arm-64
     timeout-minutes: 30
     permissions:
       packages: write
@@ -36,7 +36,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max`
           push: true
-          platforms: linux/arm64
-          #,linux/amd64
+          #platforms: linux/arm64,linux/amd64
           tags: ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }}
           file: Dockerfile
