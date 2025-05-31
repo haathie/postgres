@@ -70,6 +70,6 @@ jobs:
       - name: Create and Push Multi-Architecture Manifest
         run: |
           docker buildx imagetools create \
-            --tag ${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name }}:${{ github.sha }} \
-            ${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name }}:${{ github.sha }}-amd64 \
-            ${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name }}:${{ github.sha }}-arm64
+            --tag ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }} \
+            ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }}-amd64 \
+            ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }}-arm64
