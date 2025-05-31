@@ -13,10 +13,14 @@ FROM debian:bullseye-slim AS builder
 ARG PG_MAJOR
 ARG PG_SEARCH_VERSION
 ARG CITUS_VERSION
+# Using target arch to get the correct PG_Search package
+ARG TARGETARCH
 
 ENV CITUS_VERSION=${CITUS_VERSION}
 ENV PG_MAJOR=${PG_MAJOR}
 ENV PG_SEARCH_VERSION=${PG_SEARCH_VERSION}
+ENV TARGETARCH=${TARGETARCH}
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install build dependencies
@@ -59,7 +63,7 @@ RUN find /usr/lib/postgresql/$PG_MAJOR -name "citus*" > /tmp/citus_files.txt \
     && cat /tmp/citus_files.txt
 
 # Download PG_Search
-RUN curl https://github.com/paradedb/paradedb/releases/download/v0.15.20/postgresql-$PG_MAJOR-pg-search_$PG_SEARCH_VERSION-1PARADEDB-bullseye_arm64.deb \
+RUN curl https://github.com/paradedb/paradedb/releases/download/v0.15.20/postgresql-$PG_MAJOR-pg-search_$PG_SEARCH_VERSION-1PARADEDB-bullseye_$TARGETARCH.deb \
     -o /tmp/pg_search.deb \
     -sL
 

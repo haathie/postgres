@@ -8,11 +8,22 @@ on:
 jobs:
   build:
     name: Build & Push
-    runs-on: arm-64
     timeout-minutes: 30
     permissions:
       packages: write
       contents: read
+    strategy:
+      matrix:
+        # we'll build both ARM & x86 images
+        include:
+          - os: ubuntu-latest
+            platform: linux/amd64
+            suffix: amd64
+          - os: arm-64
+            platform: linux/arm64
+            suffix: arm64
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout
@@ -36,6 +47,29 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max`
           push: true
-          #platforms: linux/arm64,linux/amd64
-          tags: ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }}
+          tags: ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }}-${{ matrix.suffix }}
           file: Dockerfile
+  # this job will create a multi-architecture manifest
+  # so the same image tag can be used to pull the image
+  # on any architecture
+  finalize:
+    name: Create Multi-Architecture Manifest
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: 'Login to GitHub Container Registry'
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: haathie
+          password: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Create and Push Multi-Architecture Manifest
+        run: |
+          docker buildx imagetools create \
+            --tag ${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name }}:${{ github.sha }} \
+            ${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name }}:${{ github.sha }}-amd64 \
+            ${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name }}:${{ github.sha }}-arm64
