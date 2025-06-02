@@ -68,7 +68,7 @@ RUN curl https://github.com/paradedb/paradedb/releases/download/v0.15.20/postgre
     -sL
 
 # Final image using official PostgreSQL
-FROM postgres:$PG_MAJOR-bullseye
+FROM ghcr.io/cloudnative-pg/postgresql:$PG_MAJOR-bullseye
 
 # Set environment variables for building
 ARG PG_MAJOR

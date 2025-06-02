@@ -59,6 +59,8 @@ jobs:
     permissions:
       packages: write
       contents: read
+    env:
+      PG_TAG: '17'
     steps:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -74,5 +76,12 @@ jobs:
         run: |
           docker buildx imagetools create \
             --tag ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }} \
+            ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }}-amd64 \
+            ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }}-arm64
+
+      - name: Create and Push Multi-Architecture Manifest for PG_TAG
+        run: |
+          docker buildx imagetools create \
+            --tag ghcr.io/haathie/${{ github.event.repository.name }}:$PG_TAG \
             ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }}-amd64 \
             ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }}-arm64
