@@ -63,7 +63,7 @@ RUN find /usr/lib/postgresql/$PG_MAJOR -name "citus*" > /tmp/citus_files.txt \
     && cat /tmp/citus_files.txt
 
 # Download PG_Search
-RUN curl https://github.com/paradedb/paradedb/releases/download/v$$PG_SEARCH_VERSION/postgresql-$PG_MAJOR-pg-search_$PG_SEARCH_VERSION-1PARADEDB-bullseye_$TARGETARCH.deb \
+RUN curl https://github.com/paradedb/paradedb/releases/download/v$PG_SEARCH_VERSION/postgresql-$PG_MAJOR-pg-search_$PG_SEARCH_VERSION-1PARADEDB-bullseye_$TARGETARCH.deb \
     -o /tmp/pg_search.deb \
     -sL
 
