@@ -74,6 +74,8 @@ FROM ghcr.io/cloudnative-pg/postgresql:$PG_MAJOR-bullseye
 ARG PG_MAJOR
 ENV PG_MAJOR=${PG_MAJOR}
 
+USER root
+
 # Install runtime dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -98,5 +100,8 @@ RUN ls -la /usr/lib/postgresql/$PG_MAJOR/lib/ | grep pg_search \
     && ls -la /usr/share/postgresql/$PG_MAJOR/extension/ | grep pg_search
 
 EXPOSE 5432
+
+RUN usermod -u 26 postgres
+USER 26
 
 CMD ["postgres", "-c", "shared_preload_libraries=citus,pg_search"]
