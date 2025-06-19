@@ -1,6 +1,7 @@
 ARG PG_MAJOR=17
 ARG PG_SEARCH_VERSION=0.15.25
 ARG CITUS_VERSION=13.0
+ARG WAL2JSON_VERSION=2_6
 # This Dockerfile builds a Docker image for Postgres, with the following
 # extensions:
 # - Citus
@@ -13,6 +14,7 @@ FROM debian:bullseye-slim AS builder
 ARG PG_MAJOR
 ARG PG_SEARCH_VERSION
 ARG CITUS_VERSION
+ARG WAL2JSON_VERSION
 # Using target arch to get the correct PG_Search package
 ARG TARGETARCH
 
@@ -20,6 +22,7 @@ ENV CITUS_VERSION=${CITUS_VERSION}
 ENV PG_MAJOR=${PG_MAJOR}
 ENV PG_SEARCH_VERSION=${PG_SEARCH_VERSION}
 ENV TARGETARCH=${TARGETARCH}
+ENV WAL2JSON_VERSION=${WAL2JSON_VERSION}
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -67,6 +70,13 @@ RUN curl https://github.com/paradedb/paradedb/releases/download/v$PG_SEARCH_VERS
     -o /tmp/pg_search.deb \
     -sL
 
+# Build wal2json from source for PostgreSQL
+RUN cd /tmp \
+    && git clone --depth 1 --branch wal2json_$WAL2JSON_VERSION https://github.com/eulerto/wal2json.git \
+    && cd wal2json \
+    && make -j$(nproc) \
+    && make install
+
 # Final image using official PostgreSQL
 FROM ghcr.io/cloudnative-pg/postgresql:$PG_MAJOR-bullseye
 
@@ -99,9 +109,15 @@ RUN dpkg -i /tmp/pg_search.deb \
 RUN ls -la /usr/lib/postgresql/$PG_MAJOR/lib/ | grep pg_search \
     && ls -la /usr/share/postgresql/$PG_MAJOR/extension/ | grep pg_search
 
+# Copy wal2json extension files from builder
+COPY --from=builder /usr/lib/postgresql/$PG_MAJOR/lib/wal2json.so /usr/lib/postgresql/$PG_MAJOR/lib/
+
+# Verify copied files
+RUN ls -la /usr/lib/postgresql/$PG_MAJOR/lib/ | grep wal2json
+
 EXPOSE 5432
 
 RUN usermod -u 26 postgres
 USER 26
 
-CMD ["postgres", "-c", "shared_preload_libraries=citus,pg_search"]
+CMD ["postgres", "-c", "shared_preload_libraries=citus,pg_search,wal2json"]
