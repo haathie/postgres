@@ -1,5 +1,5 @@
 ARG PG_MAJOR=17
-ARG PG_SEARCH_VERSION=0.15.25
+ARG PG_SEARCH_VERSION=0.16.1
 ARG CITUS_VERSION=13.0
 ARG WAL2JSON_VERSION=2_6
 # This Dockerfile builds a Docker image for Postgres, with the following
