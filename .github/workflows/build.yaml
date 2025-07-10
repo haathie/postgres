@@ -14,16 +14,10 @@ jobs:
       contents: read
     strategy:
       matrix:
-        # we'll build both ARM & x86 images
         include:
-          - os: ubuntu-latest
-            platform: linux/amd64
-            suffix: amd64
-          - os: arm-64
-            platform: linux/arm64
-            suffix: arm64
+        - pg_version: '17'
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -45,43 +39,8 @@ jobs:
           build-args: GH_TOKEN=${{ secrets.GITHUB_TOKEN }}
           context: .
           cache-from: type=gha
-          cache-to: type=gha,mode=max`
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}-${{ matrix.suffix }}
+          tags: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }},ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ matrix.pg_version }}
           file: Dockerfile
-  # this job will create a multi-architecture manifest
-  # so the same image tag can be used to pull the image
-  # on any architecture
-  finalize:
-    name: Create Multi-Architecture Manifest
-    runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      packages: write
-      contents: read
-    env:
-      PG_TAG: '17'
-    steps:
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: 'Login to GitHub Container Registry'
-        uses: docker/login-action@v1
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{secrets.GITHUB_TOKEN}}
-
-      - name: Create and Push Multi-Architecture Manifest
-        run: |
-          docker buildx imagetools create \
-            --tag ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }} \
-            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}-amd64 \
-            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}-arm64
-
-      - name: Create and Push Multi-Architecture Manifest for PG_TAG
-        run: |
-          docker buildx imagetools create \
-            --tag ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:$PG_TAG \
-                  ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}-amd64 \
-                  ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}-arm64
