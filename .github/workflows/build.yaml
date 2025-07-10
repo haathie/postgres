@@ -36,7 +36,7 @@ jobs:
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
-          username: haathie
+          username: ${{ github.repository_owner }}
           password: ${{secrets.GITHUB_TOKEN}}
 
       - name: Build & Push Image
@@ -47,7 +47,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max`
           push: true
-          tags: ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }}-${{ matrix.suffix }}
+          tags: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}-${{ matrix.suffix }}
           file: Dockerfile
   # this job will create a multi-architecture manifest
   # so the same image tag can be used to pull the image
@@ -69,19 +69,19 @@ jobs:
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
-          username: haathie
+          username: ${{ github.repository_owner }}
           password: ${{secrets.GITHUB_TOKEN}}
 
       - name: Create and Push Multi-Architecture Manifest
         run: |
           docker buildx imagetools create \
-            --tag ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }} \
-            ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }}-amd64 \
-            ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }}-arm64
+            --tag ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }} \
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}-amd64 \
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}-arm64
 
       - name: Create and Push Multi-Architecture Manifest for PG_TAG
         run: |
           docker buildx imagetools create \
-            --tag ghcr.io/haathie/${{ github.event.repository.name }}:$PG_TAG \
-            ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }}-amd64 \
-            ghcr.io/haathie/${{ github.event.repository.name }}:${{ github.sha }}-arm64
+            --tag ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:$PG_TAG \
+                  ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}-amd64 \
+                  ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}-arm64
