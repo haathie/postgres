@@ -6,6 +6,7 @@ ARG WAL2JSON_VERSION=2_6
 # extensions:
 # - Citus
 # - PG_Search (paradedb)
+# - wal2json
 #
 # Building citus extension on Debian Bullseye Slim
 FROM debian:bullseye-slim AS builder
