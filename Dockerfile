@@ -95,26 +95,29 @@ RUN apt-get update \
         liblz4-1 \
         libzstd1 \
     && rm -rf /var/lib/apt/lists/*
-# Copy Citus extension files from builder
+
+# copy extension files from builder
 COPY --from=builder /usr/lib/postgresql/$PG_MAJOR/lib/ /usr/lib/postgresql/$PG_MAJOR/lib/
 COPY --from=builder /usr/share/postgresql/$PG_MAJOR/extension/ /usr/share/postgresql/$PG_MAJOR/extension/
-# Verify copied files
-RUN ls -la /usr/lib/postgresql/$PG_MAJOR/lib/ | grep citus \
-    && ls -la /usr/share/postgresql/$PG_MAJOR/extension/ | grep citus
 
 # Install PG_Search
 COPY --from=builder /tmp/pg_search.deb /tmp/pg_search.deb
 RUN dpkg -i /tmp/pg_search.deb \
     && rm /tmp/pg_search.deb
-# Verify PG_Search installation
-RUN ls -la /usr/lib/postgresql/$PG_MAJOR/lib/ | grep pg_search \
-    && ls -la /usr/share/postgresql/$PG_MAJOR/extension/ | grep pg_search
-
-# Copy wal2json extension files from builder
-COPY --from=builder /usr/lib/postgresql/$PG_MAJOR/lib/wal2json.so /usr/lib/postgresql/$PG_MAJOR/lib/
 
 # Verify copied files
-RUN ls -la /usr/lib/postgresql/$PG_MAJOR/lib/ | grep wal2json
+
+# Citus
+RUN ls -la /usr/lib/postgresql/$PG_MAJOR/lib/ | grep citus \
+    && ls -la /usr/share/postgresql/$PG_MAJOR/extension/ | grep citus
+
+# wal2json
+RUN ls -la /usr/lib/postgresql/$PG_MAJOR/lib/ | grep wal2json \
+    && ls -la /usr/share/postgresql/$PG_MAJOR/extension/ | grep wal2json
+
+# pg_search
+RUN ls -la /usr/lib/postgresql/$PG_MAJOR/lib/ | grep pg_search \
+    && ls -la /usr/share/postgresql/$PG_MAJOR/extension/ | grep pg_search
 
 EXPOSE 5432
 
