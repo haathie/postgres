@@ -83,7 +83,6 @@ RUN curl https://github.com/paradedb/paradedb/releases/download/v$PG_SEARCH_VERS
 
 # Final image using official PostgreSQL
 FROM ghcr.io/cloudnative-pg/postgresql:$PG_MAJOR-bookworm
-ARG TARGETARCH
 
 # Set environment variables for building
 ARG PG_MAJOR
@@ -104,16 +103,7 @@ RUN apt-get update \
     && dpkg -i /tmp/libssl1.1.deb || apt-get -f install -y \
     && rm /tmp/libssl1.1.deb \
     && apt-get purge -y curl \
-    && rm -rf /var/lib/apt/lists/* \
-    # Universal symlinks for Postgres upgrade compatibility
-    && archpath="" \
-    && if [ "${TARGETARCH}" = "arm64" ]; then archpath="aarch64-linux-gnu"; \
-       elif [ "${TARGETARCH}" = "amd64" ]; then archpath="x86_64-linux-gnu"; \
-       else echo "Unsupported TARGETARCH: ${TARGETARCH}"; exit 1; fi \
-    && ln -sf /usr/lib/${archpath}/libssl.so.1.1 /usr/lib/libssl.so.1.1 \
-    && ln -sf /usr/lib/${archpath}/libssl.so.1.1 /lib/libssl.so.1.1 \
-    && ln -sf /usr/lib/${archpath}/libcrypto.so.1.1 /usr/lib/libcrypto.so.1.1 \
-    && ln -sf /usr/lib/${archpath}/libcrypto.so.1.1 /lib/libcrypto.so.1.1 || true
+    && rm -rf /var/lib/apt/lists/*
 
 # copy extension files from builder
 COPY --from=builder /usr/lib/postgresql/$PG_MAJOR/lib/ /usr/lib/postgresql/$PG_MAJOR/lib/
