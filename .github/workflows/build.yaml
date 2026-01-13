@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         include:
-        - pg_version: '18'
+        - pg_version: '17'
 
     runs-on: ubuntu-latest
 
