@@ -127,4 +127,4 @@ EXPOSE 5432
 RUN usermod -u 26 postgres
 USER 26
 
-CMD ["postgres", "-c", "shared_preload_libraries=citus,pg_search,wal2json"]
+CMD ["postgres", "-c", "shared_preload_libraries=pg_search"]
