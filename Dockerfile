@@ -97,12 +97,6 @@ RUN apt-get update \
         libicu72 \
         liblz4-1 \
         libzstd1 \
-        curl \
-    # install libssl1.1 from bullseye for compatibility with pg_upgrade
-    && curl -L -o /tmp/libssl1.1.deb "http://security.debian.org/debian-security/pool/updates/main/o/openssl/libssl1.1_1.1.1w-0+deb11u4_${TARGETARCH}.deb" \
-    && dpkg -i /tmp/libssl1.1.deb || apt-get -f install -y \
-    && rm /tmp/libssl1.1.deb \
-    && apt-get purge -y curl \
     && rm -rf /var/lib/apt/lists/*
 
 # copy extension files from builder
