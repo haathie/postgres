@@ -70,7 +70,7 @@ RUN apt-get update \
 #     && cat /tmp/citus_files.txt
 
 # Download PG_Search
-RUN curl https://github.com/paradedb/paradedb/releases/download/v$PG_SEARCH_VERSION/postgresql-$PG_MAJOR-pg-search_$PG_SEARCH_VERSION-1PARADEDB-$DIST_$TARGETARCH.deb \
+RUN curl https://github.com/paradedb/paradedb/releases/download/v$PG_SEARCH_VERSION/postgresql-$PG_MAJOR-pg-search_$PG_SEARCH_VERSION-1PARADEDB-${DIST}_$TARGETARCH.deb \
     -o /tmp/pg_search.deb \
     -sL
 
@@ -94,7 +94,7 @@ USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         libcurl4 \
-        libicu67 \
+        libicu72 \
         liblz4-1 \
         libzstd1 \
     && rm -rf /var/lib/apt/lists/*
