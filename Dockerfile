@@ -96,8 +96,9 @@ RUN apt-get update \
         libcurl4 \
         libicu72 \
         liblz4-1 \
-        libzstd1 \
-    && rm -rf /var/lib/apt/lists/*
+         libzstd1 \
+         postgresql-18-cron \
+     && rm -rf /var/lib/apt/lists/*
 
 # copy extension files from builder
 COPY --from=builder /usr/lib/postgresql/$PG_MAJOR/lib/ /usr/lib/postgresql/$PG_MAJOR/lib/
@@ -127,4 +128,4 @@ EXPOSE 5432
 RUN usermod -u 26 postgres
 USER 26
 
-CMD ["postgres", "-c", "shared_preload_libraries=pg_search"]
+CMD ["postgres", "-c", "shared_preload_libraries=pg_search,pg_cron"]
