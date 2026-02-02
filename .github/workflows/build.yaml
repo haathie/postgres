@@ -7,18 +7,21 @@ on:
 
 jobs:
   build:
-    name: Build & Push
-    timeout-minutes: 120
+    name: Build and Push per arch
+    timeout-minutes: 30
     permissions:
       packages: write
       contents: read
     strategy:
       matrix:
         include:
-        - pg_version: '18'
-
-    runs-on: ubuntu-latest
-
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+            tagarch: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            tagarch: arm64
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,21 +29,55 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: 'Login to GitHub Container Registry'
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{secrets.GITHUB_TOKEN}}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & Push Image
+      - name: Build and Push Image per Arch
         uses: docker/build-push-action@v5
         with:
           build-args: GH_TOKEN=${{ secrets.GITHUB_TOKEN }}
           context: .
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platform }}
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}, ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ matrix.pg_version }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}-${{ matrix.tagarch }}
           file: Dockerfile
+
+  merge:
+    name: Merge and Push Multi Arch Manifest
+    runs-on: ubuntu-24.04
+    needs: build
+    steps:
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Create and Push Multi Arch Manifest with Tag 18
+        run: |
+          docker buildx imagetools create \
+            -t ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:18 \
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}-amd64 \
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}-arm64
+
+      - name: Create and Push Multi Arch Manifest with Commit Hash
+        run: |
+          docker buildx imagetools create \
+            -t ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }} \
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}-amd64 \
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}-arm64
+
+      - name: Inspect Multi Arch Image with Tag 18
+        run: |
+          docker buildx imagetools inspect ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:18
