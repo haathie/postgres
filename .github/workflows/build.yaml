@@ -41,8 +41,8 @@ jobs:
         with:
           build-args: GH_TOKEN=${{ secrets.GITHUB_TOKEN }}
           context: .
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,ref=haathie-pg-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,ref=haathie-pg-${{ matrix.platform }}
           platforms: ${{ matrix.platform }}
           push: true
           tags: |
