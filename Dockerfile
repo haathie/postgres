@@ -56,6 +56,18 @@ RUN apt-get update \
         postgresql-$PG_MAJOR \
         postgresql-server-dev-all
 
+# Install Rust and cargo-pgrx (for building pg_parquet)
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y \
+  && export PATH=$HOME/.cargo/bin:$PATH \
+  && cargo install --force --locked cargo-pgrx@0.16.1 \
+  # --- Build pg_parquet and install extension ---
+  && git clone --depth 1 https://github.com/CrunchyData/pg_parquet.git /tmp/pg_parquet \
+  && cd /tmp/pg_parquet \
+  && . $HOME/.cargo/env \
+  && export PATH=$HOME/.cargo/bin:$PATH \
+  && cargo pgrx init --pg${PG_MAJOR} $(which pg_config) \
+  && cargo pgrx install --release --features pg${PG_MAJOR}
+
 # Build Citus from source for PostgreSQL
 # RUN cd /tmp \
 #     && git clone --depth 1 --branch release-$CITUS_VERSION https://github.com/citusdata/citus.git \
@@ -103,6 +115,9 @@ RUN apt-get update \
 # copy extension files from builder
 COPY --from=builder /usr/lib/postgresql/$PG_MAJOR/lib/ /usr/lib/postgresql/$PG_MAJOR/lib/
 COPY --from=builder /usr/share/postgresql/$PG_MAJOR/extension/ /usr/share/postgresql/$PG_MAJOR/extension/
+# --- pg_parquet extension ---
+COPY --from=builder /usr/lib/postgresql/$PG_MAJOR/lib/pg_parquet* /usr/lib/postgresql/$PG_MAJOR/lib/
+COPY --from=builder /usr/share/postgresql/$PG_MAJOR/extension/pg_parquet* /usr/share/postgresql/$PG_MAJOR/extension/
 
 # Install PG_Search
 COPY --from=builder /tmp/pg_search.deb /tmp/pg_search.deb
@@ -123,9 +138,12 @@ RUN dpkg -i /tmp/pg_search.deb \
 RUN ls -la /usr/lib/postgresql/$PG_MAJOR/lib/ | grep pg_search \
     && ls -la /usr/share/postgresql/$PG_MAJOR/extension/ | grep pg_search
 
+# pg_parquet
+RUN ls -la /usr/lib/postgresql/$PG_MAJOR/lib/ | grep pg_parquet \
+	&& ls -la /usr/share/postgresql/$PG_MAJOR/extension/ | grep pg
 EXPOSE 5432
 
 RUN usermod -u 26 postgres
 USER 26
 
-CMD ["postgres", "-c", "shared_preload_libraries=pg_search,pg_cron"]
+CMD ["postgres", "-c", "shared_preload_libraries=pg_search,pg_cron,pg_parquet"]
