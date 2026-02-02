@@ -53,6 +53,9 @@ jobs:
     name: Merge and Push Multi Arch Manifest
     runs-on: ubuntu-24.04
     needs: build
+    permissions:
+      packages: write
+      contents: read
     steps:
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
