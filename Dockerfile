@@ -94,14 +94,22 @@ USER root
 
 # Install runtime dependencies
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-  	  curl \
-     libcurl4 \
-      libicu72 \
-      liblz4-1 \
-      libzstd1 \
-      postgresql-18-cron \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        gnupg \
+        lsb-release \
+    && curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
+    && echo "deb http://apt.postgresql.org/pub/repos/apt/ bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libcurl4 \
+        libicu72 \
+        liblz4-1 \
+        libzstd1 \
+        postgresql-18-cron \
+        postgresql-${PG_MAJOR}-repack \
+	&& rm -rf /var/lib/apt/lists/*
 
 # --- pg_parquet extension ---
 COPY --from=builder /usr/lib/postgresql/$PG_MAJOR/lib/pg_parquet* /usr/lib/postgresql/$PG_MAJOR/lib/
@@ -137,4 +145,4 @@ EXPOSE 5432
 RUN usermod -u 26 postgres
 USER 26
 
-CMD ["postgres", "-c", "shared_preload_libraries=pg_search,pg_cron,pg_parquet"]
+CMD ["postgres", "-c", "shared_preload_libraries=pg_search,pg_cron,pg_parquet,pg_repack"]
