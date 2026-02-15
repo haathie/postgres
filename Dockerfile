@@ -3,29 +3,17 @@ ARG PG_SEARCH_VERSION=0.21.1
 ARG DIST=bookworm
 # ARG CITUS_VERSION=13.0
 # ARG WAL2JSON_VERSION=2_6
-# This Dockerfile builds a Docker image for Postgres, with the following
-# extensions:
-# - Citus
-# - PG_Search (paradedb)
-# - wal2json
 #
-# Building citus extension on Debian bookworm Slim
+# Building extensions on Debian bookworm Slim
 FROM debian:$DIST AS builder
 
 # Set environment variables for building
 ARG PG_MAJOR
-ARG PG_SEARCH_VERSION
 # ARG CITUS_VERSION
 # ARG WAL2JSON_VERSION
-# Using target arch to get the correct PG_Search package
-ARG TARGETARCH
-ARG DIST
 
 #ENV CITUS_VERSION=${CITUS_VERSION}
 ENV PG_MAJOR=${PG_MAJOR}
-ENV PG_SEARCH_VERSION=${PG_SEARCH_VERSION}
-ENV TARGETARCH=${TARGETARCH}
-ENV DIST=${DIST}
 # ENV WAL2JSON_VERSION=${WAL2JSON_VERSION}
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -81,11 +69,6 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y \
 #     && find /usr/share/postgresql/$PG_MAJOR -name "citus*" >> /tmp/citus_files.txt \
 #     && cat /tmp/citus_files.txt
 
-# Download PG_Search
-RUN curl https://github.com/paradedb/paradedb/releases/download/v$PG_SEARCH_VERSION/postgresql-$PG_MAJOR-pg-search_$PG_SEARCH_VERSION-1PARADEDB-${DIST}_$TARGETARCH.deb \
-    -o /tmp/pg_search.deb \
-    -sL
-
 # Build wal2json from source for PostgreSQL
 # RUN cd /tmp \
 #     && git clone --depth 1 --branch wal2json_$WAL2JSON_VERSION https://github.com/eulerto/wal2json.git \
@@ -98,31 +81,38 @@ FROM ghcr.io/cloudnative-pg/postgresql:$PG_MAJOR-bookworm
 
 # Set environment variables for building
 ARG PG_MAJOR
+ARG PG_SEARCH_VERSION
+ARG DIST
+ARG TARGETARCH
+
 ENV PG_MAJOR=${PG_MAJOR}
+ENV PG_SEARCH_VERSION=${PG_SEARCH_VERSION}
+ENV DIST=${DIST}
+ENV TARGETARCH=${TARGETARCH}
 
 USER root
 
 # Install runtime dependencies
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        libcurl4 \
-        libicu72 \
-        liblz4-1 \
-         libzstd1 \
-         postgresql-18-cron \
-     && rm -rf /var/lib/apt/lists/*
+  && apt-get install -y --no-install-recommends \
+  	  curl \
+     libcurl4 \
+      libicu72 \
+      liblz4-1 \
+      libzstd1 \
+      postgresql-18-cron \
+    && rm -rf /var/lib/apt/lists/*
 
-# copy extension files from builder
-COPY --from=builder /usr/lib/postgresql/$PG_MAJOR/lib/ /usr/lib/postgresql/$PG_MAJOR/lib/
-COPY --from=builder /usr/share/postgresql/$PG_MAJOR/extension/ /usr/share/postgresql/$PG_MAJOR/extension/
 # --- pg_parquet extension ---
 COPY --from=builder /usr/lib/postgresql/$PG_MAJOR/lib/pg_parquet* /usr/lib/postgresql/$PG_MAJOR/lib/
 COPY --from=builder /usr/share/postgresql/$PG_MAJOR/extension/pg_parquet* /usr/share/postgresql/$PG_MAJOR/extension/
 
+# Download PG_Search
+RUN curl https://github.com/paradedb/paradedb/releases/download/v${PG_SEARCH_VERSION}/postgresql-${PG_MAJOR}-pg-search_${PG_SEARCH_VERSION}-1PARADEDB-${DIST}_${TARGETARCH}.deb \
+    -o /tmp/pg_search.deb \
+    -sL
 # Install PG_Search
-COPY --from=builder /tmp/pg_search.deb /tmp/pg_search.deb
-RUN dpkg -i /tmp/pg_search.deb \
-    && rm /tmp/pg_search.deb
+RUN dpkg -i /tmp/pg_search.deb && rm /tmp/pg_search.deb
 
 # Verify copied files
 
@@ -141,6 +131,7 @@ RUN ls -la /usr/lib/postgresql/$PG_MAJOR/lib/ | grep pg_search \
 # pg_parquet
 RUN ls -la /usr/lib/postgresql/$PG_MAJOR/lib/ | grep pg_parquet \
 	&& ls -la /usr/share/postgresql/$PG_MAJOR/extension/ | grep pg
+
 EXPOSE 5432
 
 RUN usermod -u 26 postgres
