@@ -109,6 +109,7 @@ RUN apt-get update \
         libzstd1 \
         postgresql-18-cron \
         postgresql-${PG_MAJOR}-repack \
+        postgresql-${PG_MAJOR}-plpgsql-check \
 	&& rm -rf /var/lib/apt/lists/*
 
 # --- pg_parquet extension ---
